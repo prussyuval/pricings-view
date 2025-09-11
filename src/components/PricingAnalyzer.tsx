@@ -250,7 +250,7 @@ const PricingCard: React.FC<{
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Rules Source:</span>
-              <span className="text-sm font-medium">{pricing.rules_source.join(', ')}</span>
+              <span className="text-sm font-medium">{pricing.rules_source ? pricing.rules_source.join(', ') : 'N/A'}</span>
             </div>
           </div>
 
@@ -265,6 +265,12 @@ const PricingCard: React.FC<{
                 </span>
               </div>
             )}
+            {!pricing.penalties.change_penalty && (
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Change Penalty:</span>
+                <span className="text-sm font-medium text-gray-400">None</span>
+              </div>
+            )}
             {pricing.penalties.refund_penalty && (
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Refund Penalty:</span>
@@ -273,10 +279,18 @@ const PricingCard: React.FC<{
                 </span>
               </div>
             )}
+            {!pricing.penalties.refund_penalty && (
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Refund Penalty:</span>
+                <span className="text-sm font-medium text-gray-400">None</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-sm text-gray-600">Reference List:</span>
               <span className="text-sm font-medium text-right">
-                {pricing.penalties.reference_list.join(', ')}
+                {pricing.penalties.reference_list && pricing.penalties.reference_list.length > 0 
+                  ? pricing.penalties.reference_list.join(', ') 
+                  : 'None'}
               </span>
             </div>
           </div>
