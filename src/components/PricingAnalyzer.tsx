@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle, XCircle, AlertCircle, DollarSign, Clock, User, Plane } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, DollarSign, Clock, User, Plane, Info } from 'lucide-react';
 
 interface PricingData {
   pricing_results: Array<{
@@ -45,39 +45,56 @@ interface PricingData {
 const CheckStatus: React.FC<{ 
   result: boolean | null; 
   should_check: boolean; 
-  label: string; 
-}> = ({ result, should_check, label }) => {
+  label: string;
+  fieldName: string;
+}> = ({ result, should_check, label, fieldName }) => {
   if (!should_check) {
     return (
-      <div className="flex items-center space-x-2 text-gray-500">
+      <div className="flex items-center space-x-2 text-gray-500 group relative">
         <AlertCircle size={16} />
         <span className="text-sm">{label}: Not checked</span>
+        <Info size={12} className="text-gray-400" />
+        <div className="absolute left-0 top-6 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
+          Field: {fieldName}
+        </div>
       </div>
     );
   }
 
   if (result === true) {
     return (
-      <div className="flex items-center space-x-2 text-green-600">
+      <div className="flex items-center space-x-2 text-green-600 group relative">
         <CheckCircle size={16} />
         <span className="text-sm">{label}: Passed</span>
+        <Info size={12} className="text-gray-400" />
+        <div className="absolute left-0 top-6 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
+          Field: {fieldName}
+        </div>
       </div>
     );
   }
 
   if (result === false) {
     return (
-      <div className="flex items-center space-x-2 text-red-600">
+      <div className="flex items-center space-x-2 text-red-600 group relative">
         <XCircle size={16} />
         <span className="text-sm">{label}: Failed</span>
+        <Info size={12} className="text-gray-400" />
+        <div className="absolute left-0 top-6 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
+          Field: {fieldName}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center space-x-2 text-yellow-600">
+    <div className="flex items-center space-x-2 text-yellow-600 group relative">
       <AlertCircle size={16} />
       <span className="text-sm">{label}: Unknown</span>
+      <Info size={12} className="text-gray-400" />
+      <div className="absolute left-0 top-6 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
+        Field: {fieldName}
+      </div>
     </div>
   );
 };
@@ -150,31 +167,37 @@ const PricingCard: React.FC<{
                 result={generalPolicy.cabin_class_preserved?.result}
                 should_check={generalPolicy.cabin_class_preserved?.should_check}
                 label="Cabin Class Preserved"
+                fieldName="cabin_class_preserved"
               />
               <CheckStatus 
                 result={generalPolicy.carry_on_preserved?.result}
                 should_check={generalPolicy.carry_on_preserved?.should_check}
                 label="Carry-on Preserved"
+                fieldName="carry_on_preserved"
               />
               <CheckStatus 
                 result={generalPolicy.fare_family_preserved?.result}
                 should_check={generalPolicy.fare_family_preserved?.should_check}
                 label="Fare Family Preserved"
+                fieldName="fare_family_preserved"
               />
               <CheckStatus 
                 result={generalPolicy.fare_type_match?.result}
                 should_check={generalPolicy.fare_type_match?.should_check}
                 label="Fare Type Match"
+                fieldName="fare_type_match"
               />
               <CheckStatus 
                 result={generalPolicy.rebook_required?.result}
                 should_check={generalPolicy.rebook_required?.should_check}
                 label="Rebook Required"
+                fieldName="rebook_required"
               />
               <CheckStatus 
                 result={generalPolicy.rule_matched_check?.result}
                 should_check={generalPolicy.rule_matched_check?.should_check}
                 label="Rule Matched Check"
+                fieldName="rule_matched_check"
               />
             </div>
           ) : (
@@ -192,7 +215,7 @@ const PricingCard: React.FC<{
 
           {policyMatch ? (
             <div className="space-y-2">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 group relative">
                 {policyMatch.change_match.is_matched ? (
                   <CheckCircle className="text-green-600" size={16} />
                 ) : (
@@ -201,12 +224,16 @@ const PricingCard: React.FC<{
                 <span className="text-sm">
                   Change Policy: {policyMatch.change_match.is_matched ? 'Matched' : 'Not Matched'}
                 </span>
+                <Info size={12} className="text-gray-400" />
+                <div className="absolute left-0 top-6 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
+                  Field: change_match
+                </div>
               </div>
               {policyMatch.change_match.message && (
                 <p className="text-xs text-gray-600 ml-6">{policyMatch.change_match.message}</p>
               )}
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 group relative">
                 {policyMatch.refund_match.is_matched ? (
                   <CheckCircle className="text-green-600" size={16} />
                 ) : (
@@ -215,6 +242,10 @@ const PricingCard: React.FC<{
                 <span className="text-sm">
                   Refund Policy: {policyMatch.refund_match.is_matched ? 'Matched' : 'Not Matched'}
                 </span>
+                <Info size={12} className="text-gray-400" />
+                <div className="absolute left-0 top-6 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
+                  Field: refund_match
+                </div>
               </div>
               {policyMatch.refund_match.message && (
                 <p className="text-xs text-gray-600 ml-6">{policyMatch.refund_match.message}</p>
