@@ -40,6 +40,10 @@ interface PricingData {
   is_renew?: boolean;
   ptc_type?: string;
   transaction_id?: string;
+}
+
+interface BookingInformation {
+  branch?: any;
   account?: {
     annotations?: any;
     archived?: any;
@@ -54,6 +58,8 @@ interface PricingData {
       };
     };
   };
+  reservation_document?: any;
+  organization?: any;
 }
 
 const CheckStatus: React.FC<{ 
@@ -118,8 +124,8 @@ const PricingCard: React.FC<{
   index: number;
   generalPolicy: Record<string, { result: boolean | null; should_check: boolean }> | undefined;
   policyMatch: { change_match: { is_matched: boolean; message: string | null }; refund_match: { is_matched: boolean; message: string | null } } | undefined;
-  accountData?: PricingData['account'];
-}> = ({ pricing, index, generalPolicy, policyMatch, accountData }) => {
+  bookingInfo?: BookingInformation;
+}> = ({ pricing, index, generalPolicy, policyMatch, bookingInfo }) => {
   const getOverallGeneralPolicyStatus = () => {
     if (!generalPolicy) return 'unknown';
     
@@ -390,23 +396,44 @@ const PricingCard: React.FC<{
 
 export const PricingAnalyzer: React.FC = () => {
   const [jsonInput, setJsonInput] = useState('');
+  const [bookingInput, setBookingInput] = useState('');
   const [parsedData, setParsedData] = useState<PricingData | null>(null);
+  const [parsedBookingInfo, setParsedBookingInfo] = useState<BookingInformation | null>(null);
   const [error, setError] = useState<string>('');
 
   const handleAnalyze = () => {
     try {
       const data = JSON.parse(jsonInput) as PricingData;
       setParsedData(data);
+      
+      let bookingInfo: BookingInformation | null = null;
+      if (bookingInput.trim()) {
+        try {
+          bookingInfo = JSON.parse(bookingInput) as BookingInformation;
+          setParsedBookingInfo(bookingInfo);
+        } catch (bookingErr) {
+          setError('Invalid JSON format in booking information. Please check your input.');
+          setParsedData(null);
+          setParsedBookingInfo(null);
+          return;
+        }
+      } else {
+        setParsedBookingInfo(null);
+      }
+      
       setError('');
     } catch (err) {
       setError('Invalid JSON format. Please check your input.');
       setParsedData(null);
+      setParsedBookingInfo(null);
     }
   };
 
   const handleClear = () => {
     setJsonInput('');
+    setBookingInput('');
     setParsedData(null);
+    setParsedBookingInfo(null);
     setError('');
   };
 
@@ -422,13 +449,30 @@ export const PricingAnalyzer: React.FC = () => {
 
         {/* Input Section */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">JSON Input</h2>
-          <textarea
-            value={jsonInput}
-            onChange={(e) => setJsonInput(e.target.value)}
-            placeholder="Paste your JSON data here..."
-            className="w-full h-64 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-          />
+          <div className="grid lg:grid-cols-2 gap-6">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Pricing Data (Required)</h2>
+              <textarea
+                value={jsonInput}
+                onChange={(e) => setJsonInput(e.target.value)}
+                placeholder="Paste your pricing JSON data here..."
+                className="w-full h-64 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+              />
+            </div>
+            
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Booking Information (Optional)</h2>
+              <textarea
+                value={bookingInput}
+                onChange={(e) => setBookingInput(e.target.value)}
+                placeholder='Paste your booking information JSON here (e.g., {"branch": {...}, "account": {...}})...'
+                className="w-full h-64 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-green-500 focus:border-green-500 font-mono text-sm"
+              />
+              <p className="text-sm text-gray-500 mt-2">
+                Optional: Include account, branch, reservation_document, and organization data
+              </p>
+            </div>
+          </div>
           
           {error && (
             <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -487,7 +531,7 @@ export const PricingAnalyzer: React.FC = () => {
                 index={index}
                 generalPolicy={parsedData.general_policy_offers_info[index.toString()]}
                 policyMatch={parsedData.policy_match_offers_info[index.toString()]}
-                accountData={parsedData.account}
+                bookingInfo={parsedBookingInfo}
               />
             ))}
           </div>
