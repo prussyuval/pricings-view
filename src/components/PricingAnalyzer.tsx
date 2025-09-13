@@ -349,46 +349,63 @@ const PricingCard: React.FC<{
         </div>
 
         {/* Fare Components */}
-        <div className="mt-4">
-          <h5 className="font-medium text-gray-800 mb-3">Fare Components</h5>
-          <div className="space-y-3">
-            {pricing.fare_components.map((component, idx) => (
-              <div key={idx} className="bg-gray-50 rounded-lg p-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Fare Basis:</span>
-                      <span className="text-sm font-medium">{component.fare_basis}</span>
+        {bookingInfo?.account?.configuration?.pricing?.policies?.policy_rule && (
+          <div className="mt-6">
+            <h5 className="font-medium text-gray-800 mb-3">Fare Components</h5>
+            <div className="space-y-3">
+              {pricing.fare_components.map((component, idx) => (
+                <div key={idx} className="bg-gray-50 rounded-lg p-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Fare Basis:</span>
+                        <span className="text-sm font-medium">{component.fare_basis}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Fare Family:</span>
+                        <span className="text-sm font-medium">{component.fare_family}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Private Indicator:</span>
+                        <span className="text-sm font-medium">{component.private_indicator}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Fare Family:</span>
-                      <span className="text-sm font-medium">{component.fare_family}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Private Indicator:</span>
-                      <span className="text-sm font-medium">{component.private_indicator}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-sm text-gray-600 block mb-2">Segments:</span>
-                    <div className="space-y-1">
-                      {component.segments.map((segment, segIdx) => (
-                        <div key={segIdx} className="text-sm">
-                          <span className="font-medium">Class {segment.booking_class}</span>
-                          {segment.carry_on_allowed !== null && (
-                            <span className="ml-2 text-gray-600">
-                              (Carry-on: {segment.carry_on_allowed ? 'Yes' : 'No'})
-                            </span>
-                          )}
-                        </div>
-                      ))}
+                    <div>
+                      <span className="text-sm text-gray-600 block mb-2">Segments:</span>
+                      <div className="space-y-1">
+                        {component.segments.map((segment, segIdx) => (
+                          <div key={segIdx} className="text-sm">
+                            <span className="font-medium">Class: {segment.booking_class}</span>
+                            {segment.carry_on_allowed !== null && (
+                              <span className="ml-2 text-gray-600">
+                                (Carry-on: {segment.carry_on_allowed ? 'Yes' : 'No'})
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+        {bookingInfo?.account?.configuration?.pricing?.policies?.policy_rule && (
+          <div className="mt-6">
+            <h5 className="font-medium text-gray-800 mb-3">Policy Rules</h5>
+            <div className="space-y-2">
+              {bookingInfo.account.configuration.pricing.policies.policy_rule.map((rule, ruleIdx) => (
+                <div key={ruleIdx} className="bg-gray-50 rounded-lg p-3">
+                  <div className="text-sm">
+                    <span className="font-medium text-gray-800">{rule.name}:</span>
+                    <span className="ml-2 text-gray-600">{rule.rule}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -396,44 +413,23 @@ const PricingCard: React.FC<{
 
 export const PricingAnalyzer: React.FC = () => {
   const [jsonInput, setJsonInput] = useState('');
-  const [bookingInput, setBookingInput] = useState('');
   const [parsedData, setParsedData] = useState<PricingData | null>(null);
-  const [parsedBookingInfo, setParsedBookingInfo] = useState<BookingInformation | null>(null);
   const [error, setError] = useState<string>('');
 
   const handleAnalyze = () => {
     try {
       const data = JSON.parse(jsonInput) as PricingData;
       setParsedData(data);
-      
-      let bookingInfo: BookingInformation | null = null;
-      if (bookingInput.trim()) {
-        try {
-          bookingInfo = JSON.parse(bookingInput) as BookingInformation;
-          setParsedBookingInfo(bookingInfo);
-        } catch (bookingErr) {
-          setError('Invalid JSON format in booking information. Please check your input.');
-          setParsedData(null);
-          setParsedBookingInfo(null);
-          return;
-        }
-      } else {
-        setParsedBookingInfo(null);
-      }
-      
       setError('');
     } catch (err) {
       setError('Invalid JSON format. Please check your input.');
       setParsedData(null);
-      setParsedBookingInfo(null);
     }
   };
 
   const handleClear = () => {
     setJsonInput('');
-    setBookingInput('');
     setParsedData(null);
-    setParsedBookingInfo(null);
     setError('');
   };
 
@@ -449,30 +445,13 @@ export const PricingAnalyzer: React.FC = () => {
 
         {/* Input Section */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          <div className="grid lg:grid-cols-2 gap-6">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Pricing Data (Required)</h2>
-              <textarea
-                value={jsonInput}
-                onChange={(e) => setJsonInput(e.target.value)}
-                placeholder="Paste your pricing JSON data here..."
-                className="w-full h-64 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-              />
-            </div>
-            
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Booking Information (Optional)</h2>
-              <textarea
-                value={bookingInput}
-                onChange={(e) => setBookingInput(e.target.value)}
-                placeholder='Paste your booking information JSON here (e.g., {"branch": {...}, "account": {...}})...'
-                className="w-full h-64 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-green-500 focus:border-green-500 font-mono text-sm"
-              />
-              <p className="text-sm text-gray-500 mt-2">
-                Optional: Include account, branch, reservation_document, and organization data
-              </p>
-            </div>
-          </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">JSON Input</h2>
+          <textarea
+            value={jsonInput}
+            onChange={(e) => setJsonInput(e.target.value)}
+            placeholder="Paste your JSON data here..."
+            className="w-full h-64 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+          />
           
           {error && (
             <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -531,7 +510,7 @@ export const PricingAnalyzer: React.FC = () => {
                 index={index}
                 generalPolicy={parsedData.general_policy_offers_info[index.toString()]}
                 policyMatch={parsedData.policy_match_offers_info[index.toString()]}
-                bookingInfo={parsedBookingInfo}
+                bookingInfo={parsedData as any}
               />
             ))}
           </div>
