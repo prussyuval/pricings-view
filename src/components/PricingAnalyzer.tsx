@@ -40,6 +40,20 @@ interface PricingData {
   is_renew?: boolean;
   ptc_type?: string;
   transaction_id?: string;
+  account?: {
+    annotations?: any;
+    archived?: any;
+    configuration?: {
+      pricing?: {
+        policies?: {
+          policy_rule?: Array<{
+            name: string;
+            rule: string;
+          }>;
+        };
+      };
+    };
+  };
 }
 
 const CheckStatus: React.FC<{ 
@@ -104,7 +118,8 @@ const PricingCard: React.FC<{
   index: number;
   generalPolicy: Record<string, { result: boolean | null; should_check: boolean }> | undefined;
   policyMatch: { change_match: { is_matched: boolean; message: string | null }; refund_match: { is_matched: boolean; message: string | null } } | undefined;
-}> = ({ pricing, index, generalPolicy, policyMatch }) => {
+  accountData?: PricingData['account'];
+}> = ({ pricing, index, generalPolicy, policyMatch, accountData }) => {
   const getOverallGeneralPolicyStatus = () => {
     if (!generalPolicy) return 'unknown';
     
@@ -472,6 +487,7 @@ export const PricingAnalyzer: React.FC = () => {
                 index={index}
                 generalPolicy={parsedData.general_policy_offers_info[index.toString()]}
                 policyMatch={parsedData.policy_match_offers_info[index.toString()]}
+                accountData={parsedData.account}
               />
             ))}
           </div>
