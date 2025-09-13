@@ -220,6 +220,33 @@ const PricingCard: React.FC<{
                 label="Rule Matched Check"
                 fieldName="rule_matched_check"
               />
+              
+              {/* Policy Rules Display when Rule Matched Check fails */}
+              {generalPolicy.rule_matched_check?.should_check && 
+               generalPolicy.rule_matched_check?.result === false && 
+               bookingInfo?.account?.configuration?.pricing?.policies?.policy_rule && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <XCircle className="text-red-600" size={16} />
+                    <h5 className="font-medium text-red-800">Policy Rules (None Matched)</h5>
+                  </div>
+                  <p className="text-sm text-red-700 mb-3">
+                    At least one of these rules must match for the Rule Matched Check to pass:
+                  </p>
+                  <div className="space-y-2">
+                    {bookingInfo.account.configuration.pricing.policies.policy_rule.map((rule, ruleIdx) => (
+                      <div key={ruleIdx} className="bg-white border border-red-300 rounded p-3">
+                        <div className="text-sm">
+                          <span className="font-medium text-red-800">{rule.name}:</span>
+                          <div className="mt-1 font-mono text-xs text-red-700 break-all">
+                            {rule.rule}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-sm text-gray-500">No general policy data available</div>
@@ -413,23 +440,44 @@ const PricingCard: React.FC<{
 
 export const PricingAnalyzer: React.FC = () => {
   const [jsonInput, setJsonInput] = useState('');
+  const [bookingInput, setBookingInput] = useState('');
   const [parsedData, setParsedData] = useState<PricingData | null>(null);
+  const [bookingInfo, setBookingInfo] = useState<BookingInformation | null>(null);
   const [error, setError] = useState<string>('');
 
   const handleAnalyze = () => {
     try {
       const data = JSON.parse(jsonInput) as PricingData;
       setParsedData(data);
+      
+      // Parse booking information if provided
+      if (bookingInput.trim()) {
+        try {
+          const booking = JSON.parse(bookingInput) as BookingInformation;
+          setBookingInfo(booking);
+        } catch (bookingErr) {
+          setError('Invalid JSON format in booking information. Please check your input.');
+          setParsedData(null);
+          setBookingInfo(null);
+          return;
+        }
+      } else {
+        setBookingInfo(null);
+      }
+      
       setError('');
     } catch (err) {
-      setError('Invalid JSON format. Please check your input.');
+      setError('Invalid JSON format in pricing data. Please check your input.');
       setParsedData(null);
+      setBookingInfo(null);
     }
   };
 
   const handleClear = () => {
     setJsonInput('');
+    setBookingInput('');
     setParsedData(null);
+    setBookingInfo(null);
     setError('');
   };
 
@@ -445,13 +493,31 @@ export const PricingAnalyzer: React.FC = () => {
 
         {/* Input Section */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">JSON Input</h2>
-          <textarea
-            value={jsonInput}
-            onChange={(e) => setJsonInput(e.target.value)}
-            placeholder="Paste your JSON data here..."
-            className="w-full h-64 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
-          />
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Data Input</h2>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Pricing Data Input */}
+            <div>
+              <h3 className="text-md font-medium text-gray-800 mb-2">Pricing Data (Required)</h3>
+              <textarea
+                value={jsonInput}
+                onChange={(e) => setJsonInput(e.target.value)}
+                placeholder="Paste your pricing JSON data here..."
+                className="w-full h-64 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+              />
+            </div>
+            
+            {/* Booking Information Input */}
+            <div>
+              <h3 className="text-md font-medium text-gray-800 mb-2">Booking Information (Optional)</h3>
+              <textarea
+                value={bookingInput}
+                onChange={(e) => setBookingInput(e.target.value)}
+                placeholder={`Paste your booking information JSON here...\n\nExample:\n{\n  "branch": {...},\n  "account": {...},\n  "reservation_document": {...},\n  "organization": {...}\n}`}
+                className="w-full h-64 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-green-500 focus:border-green-500 font-mono text-sm"
+              />
+            </div>
+          </div>
           
           {error && (
             <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -510,7 +576,7 @@ export const PricingAnalyzer: React.FC = () => {
                 index={index}
                 generalPolicy={parsedData.general_policy_offers_info[index.toString()]}
                 policyMatch={parsedData.policy_match_offers_info[index.toString()]}
-                bookingInfo={parsedData as any}
+                bookingInfo={bookingInfo}
               />
             ))}
           </div>
