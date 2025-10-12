@@ -149,7 +149,7 @@ const PricingCard: React.FC<{
   const policyMatchStatus = getOverallPolicyMatchStatus();
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
+    <div id={`pricing-card-${pricing.number}`} className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6 transition-all duration-300">
       {/* Header */}
       <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
         <div className="flex items-center space-x-3">
@@ -445,6 +445,18 @@ export const PricingAnalyzer: React.FC = () => {
   const [bookingInfo, setBookingInfo] = useState<BookingInformation | null>(null);
   const [error, setError] = useState<string>('');
 
+  const scrollToPricingCard = (pricingNumber: number) => {
+    const element = document.getElementById(`pricing-card-${pricingNumber}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Add a brief highlight effect
+      element.classList.add('ring-4', 'ring-blue-300');
+      setTimeout(() => {
+        element.classList.remove('ring-4', 'ring-blue-300');
+      }, 2000);
+    }
+  };
+
   const handleAnalyze = () => {
     try {
       const data = JSON.parse(jsonInput) as PricingData;
@@ -545,6 +557,60 @@ export const PricingAnalyzer: React.FC = () => {
         {/* Results Section */}
         {parsedData && (
           <div>
+            {/* Matching Offers Section */}
+            {parsedData.matching_offer_key && (
+              <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex items-center space-x-2 mb-3">
+                  <CheckCircle className="text-green-600" size={20} />
+                  <h3 className="text-lg font-semibold text-green-800">Matching Offers Found</h3>
+                </div>
+                <p className="text-sm text-green-700 mb-3">
+                  The following pricing options match your policy requirements:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {parsedData.pricing_results
+                    .filter(pricing => {
+                      const generalPolicy = parsedData.general_policy_offers_info[pricing.number.toString()];
+                      const policyMatch = parsedData.policy_match_offers_info[pricing.number.toString()];
+                      
+                      // Check if this offer has good policy status
+                      const hasGoodGeneralPolicy = generalPolicy && 
+                        Object.values(generalPolicy).filter(check => check.should_check).every(check => check.result === true);
+                      const hasGoodPolicyMatch = policyMatch && 
+                        policyMatch.change_match.is_matched && policyMatch.refund_match.is_matched;
+                      
+                      return hasGoodGeneralPolicy || hasGoodPolicyMatch;
+                    })
+                    .map(pricing => (
+                      <button
+                        key={pricing.number}
+                        onClick={() => scrollToPricingCard(pricing.number)}
+                        className="px-4 py-2 bg-green-100 hover:bg-green-200 text-green-800 rounded-lg border border-green-300 transition-colors cursor-pointer flex items-center space-x-2"
+                      >
+                        <Plane size={16} />
+                        <span>Option #{pricing.number}</span>
+                        <span className="text-sm">({pricing.total_price.amount} {pricing.total_price.currency})</span>
+                      </button>
+                    ))}
+                </div>
+                {parsedData.pricing_results.filter(pricing => {
+                  const generalPolicy = parsedData.general_policy_offers_info[pricing.number.toString()];
+                  const policyMatch = parsedData.policy_match_offers_info[pricing.number.toString()];
+                  
+                  const hasGoodGeneralPolicy = generalPolicy && 
+                    Object.values(generalPolicy).filter(check => check.should_check).every(check => check.result === true);
+                  const hasGoodPolicyMatch = policyMatch && 
+                    policyMatch.change_match.is_matched && policyMatch.refund_match.is_matched;
+                  
+                  return hasGoodGeneralPolicy || hasGoodPolicyMatch;
+                }).length === 0 && (
+                  <p className="text-sm text-gray-600 italic">
+                    No pricing options fully match the policy requirements.
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-semibold text-gray-900">Analysis Results</h2>
               <div className="text-sm text-gray-500">
