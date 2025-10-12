@@ -558,7 +558,7 @@ export const PricingAnalyzer: React.FC = () => {
         {parsedData && (
           <div>
             {/* Matching Offers Section */}
-            {parsedData.matching_offer_key && (
+            {parsedData && (
               <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
                 <div className="flex items-center space-x-2 mb-3">
                   <CheckCircle className="text-green-600" size={20} />
@@ -573,13 +573,14 @@ export const PricingAnalyzer: React.FC = () => {
                       const generalPolicy = parsedData.general_policy_offers_info[pricing.number.toString()];
                       const policyMatch = parsedData.policy_match_offers_info[pricing.number.toString()];
                       
-                      // Check if this offer has good policy status
+                      // Check if this offer has BOTH good general policy AND good policy match
                       const hasGoodGeneralPolicy = generalPolicy && 
+                        Object.values(generalPolicy).some(check => check.should_check) &&
                         Object.values(generalPolicy).filter(check => check.should_check).every(check => check.result === true);
                       const hasGoodPolicyMatch = policyMatch && 
                         policyMatch.change_match.is_matched && policyMatch.refund_match.is_matched;
                       
-                      return hasGoodGeneralPolicy || hasGoodPolicyMatch;
+                      return hasGoodGeneralPolicy && hasGoodPolicyMatch;
                     })
                     .map(pricing => (
                       <button
@@ -598,11 +599,12 @@ export const PricingAnalyzer: React.FC = () => {
                   const policyMatch = parsedData.policy_match_offers_info[pricing.number.toString()];
                   
                   const hasGoodGeneralPolicy = generalPolicy && 
+                    Object.values(generalPolicy).some(check => check.should_check) &&
                     Object.values(generalPolicy).filter(check => check.should_check).every(check => check.result === true);
                   const hasGoodPolicyMatch = policyMatch && 
                     policyMatch.change_match.is_matched && policyMatch.refund_match.is_matched;
                   
-                  return hasGoodGeneralPolicy || hasGoodPolicyMatch;
+                  return hasGoodGeneralPolicy && hasGoodPolicyMatch;
                 }).length === 0 && (
                   <p className="text-sm text-gray-600 italic">
                     No pricing options fully match the policy requirements.
