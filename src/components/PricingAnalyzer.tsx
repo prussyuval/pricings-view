@@ -18,10 +18,12 @@ interface PricingData {
       change_penalty?: { amount: string; currency: string };
       refund_penalty?: { amount: string; currency: string } | null;
       reference_list: number[];
+      hashed_penalties?: any;
+      mini_rules?: any;
     };
     validating_carrier: string;
     ptc_type: string;
-    rules_source: string[];
+    rules_source: string[] | null;
     price_quote_key: string;
     pricing_command_number: number;
     is_matched: any;
@@ -31,8 +33,8 @@ interface PricingData {
     should_check: boolean;
   }>>;
   policy_match_offers_info: Record<string, {
-    change_match: { is_matched: boolean; message: string | null };
-    refund_match: { is_matched: boolean; message: string | null };
+    change_match?: { is_matched: boolean; message: string | null };
+    refund_match?: { is_matched: boolean; message: string | null };
   }>;
   fare_query?: any;
   corporate_codes?: any[];
@@ -40,6 +42,9 @@ interface PricingData {
   is_renew?: boolean;
   ptc_type?: string;
   transaction_id?: string;
+  matched_policy_rules_for_matched_offer?: string[];
+  matching_offer_key?: string;
+  penalty_qualifiers?: any;
 }
 
 interface BookingInformation {
@@ -123,7 +128,7 @@ const PricingCard: React.FC<{
   pricing: PricingData['pricing_results'][0];
   index: number;
   generalPolicy: Record<string, { result: boolean | null; should_check: boolean }> | undefined;
-  policyMatch: { change_match: { is_matched: boolean; message: string | null }; refund_match: { is_matched: boolean; message: string | null } } | undefined;
+  policyMatch: { change_match?: { is_matched: boolean; message: string | null }; refund_match?: { is_matched: boolean; message: string | null } } | undefined;
   bookingInfo?: BookingInformation;
 }> = ({ pricing, index, generalPolicy, policyMatch, bookingInfo }) => {
   const getOverallGeneralPolicyStatus = () => {
@@ -142,7 +147,9 @@ const PricingCard: React.FC<{
 
   const getOverallPolicyMatchStatus = () => {
     if (!policyMatch) return 'unknown';
-    return policyMatch.change_match.is_matched && policyMatch.refund_match.is_matched ? 'matched' : 'not-matched';
+    const changeMatched = policyMatch.change_match?.is_matched ?? false;
+    const refundMatched = policyMatch.refund_match?.is_matched ?? false;
+    return changeMatched && refundMatched ? 'matched' : 'not-matched';
   };
 
   const generalPolicyStatus = getOverallGeneralPolicyStatus();
@@ -263,39 +270,53 @@ const PricingCard: React.FC<{
 
           {policyMatch ? (
             <div className="space-y-2">
-              <div className="flex items-center space-x-2 group relative">
-                {policyMatch.change_match.is_matched ? (
-                  <CheckCircle className="text-green-600" size={16} />
-                ) : (
-                  <XCircle className="text-red-600" size={16} />
-                )}
-                <span className="text-sm">
-                  Change Policy: {policyMatch.change_match.is_matched ? 'Matched' : 'Not Matched'}
-                </span>
-                <Info size={12} className="text-gray-400" />
-                <div className="absolute left-0 top-6 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
-                  Field: change_match
+              {policyMatch.change_match ? (
+                <div className="flex items-center space-x-2 group relative">
+                  {policyMatch.change_match.is_matched ? (
+                    <CheckCircle className="text-green-600" size={16} />
+                  ) : (
+                    <XCircle className="text-red-600" size={16} />
+                  )}
+                  <span className="text-sm">
+                    Change Policy: {policyMatch.change_match.is_matched ? 'Matched' : 'Not Matched'}
+                  </span>
+                  <Info size={12} className="text-gray-400" />
+                  <div className="absolute left-0 top-6 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
+                    Field: change_match
+                  </div>
                 </div>
-              </div>
-              {policyMatch.change_match.message && (
+              ) : (
+                <div className="flex items-center space-x-2 text-gray-500">
+                  <AlertCircle size={16} />
+                  <span className="text-sm">Change Policy: No data available</span>
+                </div>
+              )}
+              {policyMatch.change_match?.message && (
                 <p className="text-xs text-gray-600 ml-6">{policyMatch.change_match.message}</p>
               )}
 
-              <div className="flex items-center space-x-2 group relative">
-                {policyMatch.refund_match.is_matched ? (
-                  <CheckCircle className="text-green-600" size={16} />
-                ) : (
-                  <XCircle className="text-red-600" size={16} />
-                )}
-                <span className="text-sm">
-                  Refund Policy: {policyMatch.refund_match.is_matched ? 'Matched' : 'Not Matched'}
-                </span>
-                <Info size={12} className="text-gray-400" />
-                <div className="absolute left-0 top-6 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
-                  Field: refund_match
+              {policyMatch.refund_match ? (
+                <div className="flex items-center space-x-2 group relative">
+                  {policyMatch.refund_match.is_matched ? (
+                    <CheckCircle className="text-green-600" size={16} />
+                  ) : (
+                    <XCircle className="text-red-600" size={16} />
+                  )}
+                  <span className="text-sm">
+                    Refund Policy: {policyMatch.refund_match.is_matched ? 'Matched' : 'Not Matched'}
+                  </span>
+                  <Info size={12} className="text-gray-400" />
+                  <div className="absolute left-0 top-6 bg-gray-800 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
+                    Field: refund_match
+                  </div>
                 </div>
-              </div>
-              {policyMatch.refund_match.message && (
+              ) : (
+                <div className="flex items-center space-x-2 text-gray-500">
+                  <AlertCircle size={16} />
+                  <span className="text-sm">Refund Policy: No data available</span>
+                </div>
+              )}
+              {policyMatch.refund_match?.message && (
                 <p className="text-xs text-gray-600 ml-6">{policyMatch.refund_match.message}</p>
               )}
             </div>
@@ -578,7 +599,7 @@ export const PricingAnalyzer: React.FC = () => {
                         Object.values(generalPolicy).some(check => check.should_check) &&
                         Object.values(generalPolicy).filter(check => check.should_check).every(check => check.result === true);
                       const hasGoodPolicyMatch = policyMatch && 
-                        policyMatch.change_match.is_matched && policyMatch.refund_match.is_matched;
+                        (policyMatch.change_match?.is_matched ?? false) && (policyMatch.refund_match?.is_matched ?? false);
                       
                       return hasGoodGeneralPolicy && hasGoodPolicyMatch;
                     })
@@ -602,7 +623,7 @@ export const PricingAnalyzer: React.FC = () => {
                     Object.values(generalPolicy).some(check => check.should_check) &&
                     Object.values(generalPolicy).filter(check => check.should_check).every(check => check.result === true);
                   const hasGoodPolicyMatch = policyMatch && 
-                    policyMatch.change_match.is_matched && policyMatch.refund_match.is_matched;
+                    (policyMatch.change_match?.is_matched ?? false) && (policyMatch.refund_match?.is_matched ?? false);
                   
                   return hasGoodGeneralPolicy && hasGoodPolicyMatch;
                 }).length === 0 && (
